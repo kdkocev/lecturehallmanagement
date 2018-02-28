@@ -9,3 +9,5 @@ A website that is aiming to make lecture hall schedules easier to manage
 * in `./config.php` set the database credentials to your local ones.
 * run migrations (run the SQL in `./migrations/migrations.sql` in your local database) **Note** that different databases have a different understanding of the SQL syntax so you might have to change the sql in migrations.sql depending on your local database.
 * run the website
+
+**Note:** This project's style is written in Sass. Do not write plain css in `/static/style.css` because it will get overwritten by the sass build. Either write Sass and build css with it, or write css in a different file.
