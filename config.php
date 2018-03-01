@@ -13,7 +13,7 @@
 			'start_hour' => 9,
 			'end_hour' => 12,
 			'calendar_hours_height' => 200,
-			'calendar_delimeters_offset' => '30' // Minutes
+			'calendar_delimeters_offset' => '15' // Minutes
 		),
 		'date_default_timezone_set' => 'America/New_York',
 	);

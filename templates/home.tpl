@@ -65,7 +65,7 @@
 
             $delimeters = [];
 
-            while($start <= $end_time) {
+            while($start < $end_time) {
               $delimeters[] = date("H:i", $start);
               $start = strtotime($scale, $start);
               $hours_row_count++;

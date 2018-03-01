@@ -1,7 +1,8 @@
 (function() {
   var startHour = window.startHour;
   var endHour = window.endHour;
-  window.slot_time_length = 0.25; // in hours
+  window.slot_time_length = 0.25; // in hours DEPRECATED
+  window.slotTimeLength = 0.125; // in hours
 
   function dateString() {
     return window.date;
@@ -82,13 +83,13 @@
   }
 
   function renderSlotObject(slot) {
-    var startTime = timeToPixels(new Date(slot.start_time));
+    var top = timeToPixels(new Date(slot.start_time));
     var height =
       timeToPixels(new Date(slot.end_time)) -
       timeToPixels(new Date(slot.start_time));
     createElement(
       "slot_" + slot.id,
-      startTime,
+      top,
       height,
       slot.title,
       slot.description,
@@ -164,70 +165,29 @@
       });
     });
     $(".calendar").mousedown(function(e) {
-      if (
-        $(e.target).hasClass("slot") ||
-        $(e.target).parents(".slot").length > 0
-      )
-        return;
-      var slotLength = window.slot_time_length;
-
-      var elementTop = e.pageY - $(".calendar").offset().top;
-
-      var start = heightToHours(elementTop);
-      var end = start + slotLength;
-      var elementHeight = hoursToPixels(end - start);
-      var dateS = dateString();
-      var dateTimeString = dateS + " " + minutesToTime(start * 60) + ":00";
-      var endDateString = dateS + " " + minutesToTime(end * 60) + ":00";
-
-      $.post(
-        window.server + "/api/slot/create",
-        { slot: { start_date: dateTimeString, end_date: endDateString } },
-        function(id) {
-          createElement(
-            "slot_" + id,
-            elementTop,
-            elementHeight,
-            "",
-            "",
-            minutesToTime(start * 60),
-            minutesToTime(end * 60)
-          );
-        }
-      );
+      function isLocatedInASlot(target) {
+        return target.hasClass("slot") || target.parents(".slot").length > 0;
+      }
+      if (!isLocatedInASlot($(e.target))) {
+        createSlotByClicking(e.pageY);
+      }
     });
+    function slotElementId(slot) {
+      return parseInt(slot.attr("id").slice(5));
+    }
     $(".calendar").on("click", ".remove-button", function() {
-      var id = parseInt(
-        $(this)
-          .parents(".slot")
-          .attr("id")
-          .slice(5)
-      );
+      var slot = $(this).parents(".slot");
+      var id = slotElementId(slot);
 
-      $(this)
-        .parents(".slot")
-        .remove();
-      $.post(window.server + "/api/slot/delete", { id: id });
+      slot.remove();
+      $.post(url("/api/slot/delete"), { id: id });
     });
     $(".calendar").on("click", ".toggle-lock-slot", function() {
-      var id = parseInt(
-        $(this)
-          .parents(".slot")
-          .attr("id")
-          .slice(5)
-      );
+      var slot = $(this).parents(".slot");
+      var id = slotElementId(slot);
 
-      $(this)
-        .parents(".slot")
-        .remove();
-      $.post(
-        window.server + "/api/slot/lock",
-        { id: id },
-        function(slot) {
-          renderSlotObject(slot);
-        },
-        "json"
-      );
+      slot.remove();
+      $.post(url("/api/slot/lock"), { id: id }, renderSlotObject, "json");
     });
     $(".calendar").on("click", ".resize-mode", function() {
       $(this)
@@ -284,6 +244,45 @@
       window.location.reload();
     });
   });
+
+  /* Refactored */
+  function pixelsToTime(px) {
+    var ratio = px / $(".calendar").height();
+    return ratio * (window.endHour - window.startHour) + window.startHour;
+  }
+  function hoursToMinutesAndHours(hours) {
+    var m = Math.floor((hours * 60) % 60);
+    var h = Math.floor(hours);
+    if (h < 10) h = "0" + h;
+    if (m < 10) m = "0" + m;
+    return h + ":" + m;
+  }
+  function url(path) {
+    return window.server + path;
+  }
+  function getSlot(id, cb) {
+    $.post(url("/api/slot/retreive"), { id: id }, cb, "json");
+  }
+  function renderSlot(id) {
+    getSlot(id, renderSlotObject);
+  }
+
+  function createSlotByClicking(mouseY) {
+    function hoursToDateString(hours) {
+      return window.date + " " + hoursToMinutesAndHours(hours) + ":00";
+    }
+
+    var startTimeSelected = pixelsToTime(mouseY - $(".calendar").offset().top);
+    var endTimeSelected = startTimeSelected + window.slotTimeLength;
+
+    var slot = {
+      start_date: hoursToDateString(startTimeSelected),
+      end_date: hoursToDateString(endTimeSelected)
+    };
+
+    $.post(url("/api/slot/create"), { slot: slot }, renderSlot);
+  }
+  /* end Refactored */
 
   // initially loads the data
   $(document).ready(function() {

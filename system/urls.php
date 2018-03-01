@@ -4,6 +4,7 @@
 	include_once('request.php');
 
 	$router = new Router(array(
+		'/api/slot/retreive' => url('controllers/api/slot.php', 'SlotController.retreive'),
 		'/api/slot/create' => url('controllers/api/slot.php', 'SlotController.create'),
 		'/api/slot/delete' => url('controllers/api/slot.php', 'SlotController.remove'),
 		'/api/slot/update' => url('controllers/api/slot.php', 'SlotController.update'),

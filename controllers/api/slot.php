@@ -15,6 +15,13 @@
 			echo json_encode($slots);
 			
 		}
+
+		function retreive() {
+			$id = $_POST['id'];
+			$slot = PresentationSlot::objects()->get($id);
+			return json_encode($slot);
+		}
+
 		function create() {
 			$this->forbiddenIfNotAdmin();
 
