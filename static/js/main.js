@@ -193,11 +193,18 @@
     });
   }
 
+  var visible = false;
   $(".calendar").on("click", ".settings-button", function() {
-    $(this)
+    $(".settings-list").hide();
+    var el = $(this)
       .parent()
-      .find(".settings-list")
-      .toggle();
+      .find(".settings-list");
+    if (visible != el[0]) {
+      visible = el[0];
+      el.show();
+    } else {
+      visible = false;
+    }
   });
 
   $(".calendar").on("click", ".delete-reservation", function() {
