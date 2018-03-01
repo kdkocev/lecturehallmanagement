@@ -1,15 +1,11 @@
 <?php
+	$local_config = include './local_config.php';
 	return array(
-		'base_path' => '/fmi',
-		'database' => array(
-			'username' => 'root',
-			'password' => '123123',
-			'db_name' => 'fmi',
-			'servername' => 'localhost'
-		),
+		'base_path' => $local_config['base_path'],
+		'database' => $local_config['database'],
 		'templates' => array(
-			'static_urls' => '/fmi/static',
-			'base_path' => '/fmi',
+			'static_urls' => $local_config['base_path'] . '/static',
+			'base_path' => $local_config['base_path'],
 			'start_hour' => 9,
 			'end_hour' => 12,
 			'calendar_hours_height' => 200,
