@@ -1,44 +1,55 @@
 (function() {
   var startHour = window.startHour;
   var endHour = window.endHour;
-  window.slot_time_length = 0.25; // in hours DEPRECATED
   window.slotTimeLength = 0.125; // in hours
-
-  function dateString() {
-    return window.date;
-  }
 
   function twoNums(n) {
     if (n < 10) return "0" + n;
     return n;
   }
+  function getSlotElementId(slot) {
+    return parseInt(slot.attr("id").slice(5));
+  }
+  function pixelsToTimeInHours(px) {
+    var ratio = px / $(".calendar").height();
+    return ratio * (window.endHour - window.startHour) + window.startHour;
+  }
+  function hoursToMinutesAndHours(hours) {
+    var m = Math.floor((hours * 60) % 60);
+    var h = Math.floor(hours);
+    if (h < 10) h = "0" + h;
+    if (m < 10) m = "0" + m;
+    return h + ":" + m;
+  }
+  function hoursToDateString(hours) {
+    return window.date + " " + hoursToMinutesAndHours(hours) + ":00";
+  }
+  function url(path) {
+    return window.server + path;
+  }
+  function getSlot(id, cb) {
+    $.post(url("/api/slot/retreive"), { id: id }, cb, "json");
+  }
+  function renderSlotById(id) {
+    getSlot(id, renderSlotObject);
+  }
 
-  window.slotId = 0;
   function createElement(id, top, height, title, content, startTime, endTime) {
-    $.post(
-      window.server + "/api/slot/render",
-      {
-        slot: JSON.stringify({
-          id: id,
-          top: top,
-          height: height,
-          title: title,
-          content: content,
-          startTime: startTime,
-          endTime: endTime
-        })
-      },
-      function(data) {
-        $(".calendar").append(data);
-      }
-    );
+    var data = {
+      slot: JSON.stringify({
+        id: id,
+        top: top,
+        height: height,
+        title: title,
+        content: content,
+        startTime: startTime,
+        endTime: endTime
+      })
+    };
+    $.post(url("/api/slot/render"), data, function(slot) {
+      $(".calendar").append(slot);
+    });
   }
-
-  // not used?
-  function hourToPixels(hour) {
-    return startHour + hour * (endHour - startHour);
-  }
-
   function timeToPixels(date) {
     return (
       (date.getHours() + date.getMinutes() / 60 - startHour) /
@@ -46,22 +57,11 @@
       $(".calendar").height()
     );
   }
-  function hoursToPixels(hours) {
-    return (
-      (hours - startHour) / (endHour - startHour) * $(".calendar").height()
-    );
-  }
-
-  function heightToHours(height) {
-    return height / $(".calendar").height() * (endHour - startHour) + startHour;
-  }
-
   function minutesToTime(minutes) {
     return (
       twoNums(parseInt(minutes / 60)) + ":" + twoNums(parseInt(minutes % 60))
     );
   }
-
   function formatDate(date) {
     var fulldate =
       date.getFullYear() +
@@ -77,16 +77,15 @@
       twoNums(date.getSeconds());
     return fulldate + " " + time;
   }
-
   function dateToHourAndMinutes(date) {
     return twoNums(date.getHours()) + ":" + twoNums(date.getMinutes());
   }
-
   function renderSlotObject(slot) {
     var top = timeToPixels(new Date(slot.start_time));
     var height =
       timeToPixels(new Date(slot.end_time)) -
       timeToPixels(new Date(slot.start_time));
+
     createElement(
       "slot_" + slot.id,
       top,
@@ -100,13 +99,8 @@
 
   if (window.isAdmin) {
     $(".calendar").on("click", ".show-notes-button", function(e) {
-      var id = $(this)
-        .parents(".slot")
-        .attr("id")
-        .substr(5);
-      $.post(window.server + "/api/slot/renderNotes", { id: id }, function(
-        data
-      ) {
+      var id = getSlotElementId($(this).parents(".slot"));
+      $.post(url("/api/slot/renderNotes"), { id: id }, function(data) {
         $(".notes-modal-wrapper").html(data);
         $(".notes-modal").show();
       });
@@ -115,18 +109,17 @@
       $(".notes-modal").hide();
     });
     $(".calendar").on("click", ".add-note-button", function(e) {
-      var slotId = $(this)
-        .parents(".slot")
-        .attr("id")
-        .substr(5);
+      var id = getSlotElementId($(this).parents(".slot"));
       $(".add-note-modal").show();
       $(".add-note-modal")
         .find("input[name='slot_id']")
-        .val(slotId);
+        .val(id);
     });
     $(".close-add-note-modal").click(function() {
       $(".add-note-modal").hide();
     });
+
+    // TODO: remove this and replace it with two input fields
     $(".calendar").on("mousedown", ".resize-handle", function(e) {
       var startY = e.pageY;
       var target = $("#" + $(e.target).attr("ref"));
@@ -137,33 +130,25 @@
       $(document).one("mouseup", function(e) {
         $(document).unbind("mousemove");
         var height = $(target).height();
-        var startH = heightToHours(
-          $(target).offset().top - $(".calendar").offset().top
-        );
-        var endH = heightToHours(
-          $(target).offset().top - $(".calendar").offset().top + height
-        );
-        window.slot_time_length = endH - startH;
+        var slotTop = $(target).offset().top;
+        var calendarOffset = $(".calendar").offset().top;
 
-        var id = parseInt(
-          $(target)
-            .attr("id")
-            .slice(5)
-        );
-        var startTime = dateString() + " " + minutesToTime(startH * 60) + ":00";
-        var endTime = dateString() + " " + minutesToTime(endH * 60) + ":00";
+        var startH = pixelsToTimeInHours(slotTop - calendarOffset);
+        var endH = pixelsToTimeInHours(slotTop - calendarOffset + height);
 
-        $.post(
-          window.server + "/api/slot/update",
-          { id: id, start_date: startTime, end_date: endTime },
-          function(slot) {
-            target.remove();
-            renderSlotObject(slot);
-          },
-          "json"
-        );
+        window.slotTimeLength = endH - startH;
+
+        var data = {
+          id: getSlotElementId($(target)),
+          start_date: hoursToDateString(startH),
+          end_date: hoursToDateString(endH)
+        };
+        // Remove the element and render it again
+        target.remove();
+        $.post(url("/api/slot/update"), data, renderSlotObject, "json");
       });
     });
+
     $(".calendar").mousedown(function(e) {
       function isLocatedInASlot(target) {
         return target.hasClass("slot") || target.parents(".slot").length > 0;
@@ -172,19 +157,16 @@
         createSlotByClicking(e.pageY);
       }
     });
-    function slotElementId(slot) {
-      return parseInt(slot.attr("id").slice(5));
-    }
     $(".calendar").on("click", ".remove-button", function() {
       var slot = $(this).parents(".slot");
-      var id = slotElementId(slot);
+      var id = getSlotElementId(slot);
 
       slot.remove();
       $.post(url("/api/slot/delete"), { id: id });
     });
     $(".calendar").on("click", ".toggle-lock-slot", function() {
       var slot = $(this).parents(".slot");
-      var id = slotElementId(slot);
+      var id = getSlotElementId(slot);
 
       slot.remove();
       $.post(url("/api/slot/lock"), { id: id }, renderSlotObject, "json");
@@ -198,27 +180,13 @@
   } else {
     $(".calendar").on("click", ".take-slot-button", function() {
       var targetSlot = $(this).parents(".slot");
-      console.log(targetSlot.attr("id"));
-
-      var startHour = minutesToTime(
-        heightToHours(
-          $(targetSlot).offset().top - $(".calendar").offset().top
-        ) * 60
-      );
-      var endHour = minutesToTime(
-        heightToHours(
-          $(targetSlot).offset().top -
-            $(".calendar").offset().top +
-            $(targetSlot).height()
-        ) * 60
-      );
+      var id = getSlotElementId(targetSlot);
+      var slot = getSlot(id);
 
       $(".take-slot-modal").show();
-      $(".take-slot-modal .slot-start-time").html(startHour);
-      $(".take-slot-modal .slot-end-time").html(endHour);
-      $(".take-slot-modal input[name='id']").val(
-        targetSlot.attr("id").substr(5)
-      );
+      $(".take-slot-modal .slot-start-time").html(slot.start_time);
+      $(".take-slot-modal .slot-end-time").html(slot.end_time);
+      $(".take-slot-modal input[name='id']").val(id);
     });
     $(".take-slot-modal-close").click(function() {
       $(".take-slot-modal").hide();
@@ -233,46 +201,16 @@
   });
 
   $(".calendar").on("click", ".delete-reservation", function() {
-    var id = parseInt(
-      $(this)
-        .parents(".slot")
-        .attr("id")
-        .slice(5)
-    );
+    var id = getSlotElementId($(this).parents(".slot"));
 
-    $.post(window.server + "/api/slot/setfree", { id: id }, function() {
+    $.post(url("/api/slot/setfree"), { id: id }, function() {
       window.location.reload();
     });
   });
 
-  /* Refactored */
-  function pixelsToTime(px) {
-    var ratio = px / $(".calendar").height();
-    return ratio * (window.endHour - window.startHour) + window.startHour;
-  }
-  function hoursToMinutesAndHours(hours) {
-    var m = Math.floor((hours * 60) % 60);
-    var h = Math.floor(hours);
-    if (h < 10) h = "0" + h;
-    if (m < 10) m = "0" + m;
-    return h + ":" + m;
-  }
-  function url(path) {
-    return window.server + path;
-  }
-  function getSlot(id, cb) {
-    $.post(url("/api/slot/retreive"), { id: id }, cb, "json");
-  }
-  function renderSlot(id) {
-    getSlot(id, renderSlotObject);
-  }
-
   function createSlotByClicking(mouseY) {
-    function hoursToDateString(hours) {
-      return window.date + " " + hoursToMinutesAndHours(hours) + ":00";
-    }
-
-    var startTimeSelected = pixelsToTime(mouseY - $(".calendar").offset().top);
+    var offset = $(".calendar").offset().top;
+    var startTimeSelected = pixelsToTimeInHours(mouseY - offset);
     var endTimeSelected = startTimeSelected + window.slotTimeLength;
 
     var slot = {
@@ -280,21 +218,17 @@
       end_date: hoursToDateString(endTimeSelected)
     };
 
-    $.post(url("/api/slot/create"), { slot: slot }, renderSlot);
+    $.post(url("/api/slot/create"), { slot: slot }, renderSlotById);
   }
-  /* end Refactored */
 
   // initially loads the data
   $(document).ready(function() {
-    $.post(
-      window.server + "/api/slot/list",
-      { date: window.date },
-      function(slots) {
-        slots.forEach(function(slot) {
-          renderSlotObject(slot);
-        });
-      },
-      "json"
-    );
+    function forEachData(callback) {
+      return function(elements) {
+        elements.forEach(callback);
+      };
+    }
+    var data = { date: window.date };
+    $.post(url("/api/slot/list"), data, forEachData(renderSlotObject), "json");
   });
 })($);
