@@ -377,4 +377,39 @@ a {
   box-sizing: border-box;
   padding: 20px; }
 
+.add-slots-modal {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.6); }
+  .add-slots-modal .add-slots-modal-close {
+    position: absolute;
+    top: 110px;
+    left: 50%;
+    margin-left: 320px;
+    cursor: pointer;
+    font-size: 30px; }
+    .add-slots-modal .add-slots-modal-close:hover {
+      color: #fbc039; }
+
+.add-slots-modal-wrapper {
+  margin: 100px auto 0 auto;
+  width: 700px;
+  background-color: #20a9b0;
+  box-sizing: border-box;
+  padding: 20px; }
+  .add-slots-modal-wrapper label, .add-slots-modal-wrapper input {
+    display: block;
+    width: 300px;
+    margin: auto; }
+  .add-slots-modal-wrapper label {
+    margin-bottom: 10px;
+    margin-top: 10px; }
+  .add-slots-modal-wrapper input {
+    padding: 7px 15px;
+    border: 0; }
+
 /*# sourceMappingURL=style.css.map */

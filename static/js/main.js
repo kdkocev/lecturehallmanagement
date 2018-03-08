@@ -228,6 +228,14 @@
     $.post(url("/api/slot/create"), { slot: slot }, renderSlotById);
   }
 
+  $(".add-slots-modal-close").click(function() {
+    $(".add-slots-modal").hide();
+  })
+
+  $(".create-slots-button").click(function() {
+    $(".add-slots-modal").show();
+  });
+
   // initially loads the data
   $(document).ready(function() {
     function forEachData(callback) {

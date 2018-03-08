@@ -7,7 +7,7 @@
 			'static_urls' => $local_config['base_path'] . '/static',
 			'base_path' => $local_config['base_path'],
 			'start_hour' => 9,
-			'end_hour' => 12,
+			'end_hour' => 13,
 			'calendar_hours_height' => 200,
 			'calendar_delimeters_offset' => '15' // Minutes
 		),

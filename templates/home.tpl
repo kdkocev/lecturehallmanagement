@@ -21,6 +21,9 @@
         <?php } ?>
       </ul>
     </div>
+    <div>
+      <button class="create-slots-button">Create slots</button>
+    </div>
   </div>
   <div class="content-wrapper">
     <div class="content">
@@ -147,6 +150,22 @@
       <div class="notes-modal-close"><i class="material-icons">clear</i></div>
       <div class="notes-modal-wrapper">
 
+      </div>
+    </div>
+
+    <div class="add-slots-modal">
+      <div class="add-slots-modal-close"><i class="material-icons">clear</i></div>
+      <div class="add-slots-modal-wrapper">
+        <form action="<?php echo $this->configs['base_path']; ?>/slot/add-many" method="POST">
+          <label>From</label>
+          <input name="from" placeholder="13:00" />
+          <label>To</label>
+          <input name="to" placeholder="15:00" />
+          <label>Interval (minutes)</label>
+          <input name="interval" placeholder="15" />
+          <input type="hidden" name="date" value="<?php echo $this->today->format('Y-m-d'); ?>" />
+          <input type="submit" />
+        </form>
       </div>
     </div>
 

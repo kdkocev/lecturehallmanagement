@@ -17,6 +17,7 @@
 		'/' => url('controllers/home.php', 'HomeController'),
 		'/slot/reserve' => url('controllers/home.php', 'HomeController.reserve'),
 		'/slot/addreview' => url('controllers/home.php', 'HomeController.addReview'),
+		'/slot/add-many' => url('controllers/home.php', 'HomeController.addMany'),
 
 		'/login' => url('controllers/logincontroller.php', 'LoginController'),
 		'/logout' => url('controllers/logincontroller.php', 'LoginController.logout'),
