@@ -378,6 +378,7 @@ a {
   padding: 20px; }
 
 .add-slots-modal {
+  display: none;
   position: fixed;
   left: 0;
   top: 0;
